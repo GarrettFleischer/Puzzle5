@@ -50,29 +50,57 @@ ApplicationWindow {
                 height: 187 - y
                 color: "orange"
 
-                Text
+
+
+                ListView
                 {
-                    id: txt_screen_song
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    y: 0
-                    text: is_playing === true ? "Song: " + songs[song_index] : ""
-                    font.family: "BELLABOO"
-                    font.pointSize: 14
-                    wrapMode: Text.Wrap
+                    id: lst_menu
+                    anchors.fill: parent
+
+                    model: LibraryModel {}
+                    delegate:
+                        Text {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        text: song + " - " + band
+                        wrapMode: Text.Wrap
+                    }
                 }
 
-                Text
+                Rectangle
                 {
-                    id: txt_screen_band
-                    anchors.top: txt_screen_song.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    text: is_playing === true ? "Band: " + bands[song_index] : "Paused..."
-                    font.family: "BELLABOO"
-                    font.pointSize: 14
-                    wrapMode: Text.Wrap
+                    id: rct_text
+                    visible: false
+
+                    anchors.fill: parent
+
+                    Text
+                    {
+                        id: txt_screen_song
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        y: 0
+                        text: is_playing === true ? "Song: " + songs[song_index] : ""
+                        font.family: "BELLABOO"
+                        font.pointSize: 14
+                        wrapMode: Text.Wrap
+                    }
+
+                    Text
+                    {
+                        id: txt_screen_band
+                        visible: false
+                        anchors.top: txt_screen_song.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        text: is_playing === true ? "Band: " + bands[song_index] : "Paused..."
+                        font.family: "BELLABOO"
+                        font.pointSize: 14
+                        wrapMode: Text.Wrap
+                    }
                 }
+
                 MouseArea
                 {
                     id: ma_screen
@@ -149,12 +177,7 @@ ApplicationWindow {
 
                     onClicked:
                     {
-                        console.log("Menu button clicked!")
-                    }
 
-                    onPressAndHold:
-                    {
-                        song_current.seek(song_current.position + 500)
                     }
                 }
             }
@@ -186,7 +209,6 @@ ApplicationWindow {
                             is_playing = false;
                             song_current.pause();
                         }
-                        console.log("Play button clicked!")
                     }
                 }
             }
