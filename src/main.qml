@@ -8,19 +8,30 @@ ApplicationWindow {
     height: 480
     title: qsTr("iPod")
 
-    property bool is_playing: false
 
-    // Possibly use hash table instead...iffy on qml's implementation of them, though (basically tuples and cannot change them)
-    property variant songs: ["Burning the Nicotine Armoire",
-        "Happiness",
-        "Open Your Eyes And Look North",
-        "Surprise! I'm From Cuba, Everyone Else Has One Brain."]
-    property variant bands: ["Dance Gavin Dance", "Dance Gavin Dance", "Dance Gavin Dance"]
+    ListModel
+    {
+        id: mdl_library
+
+        ListElement {
+            song: "Burning the Nicotine Armoire"
+            band: "Dance Gavin Dance"
+            source: "../songs/Dance Gavin Dance - Burning Down the Nicotine Armoire (audio-cutter.com).mp3"
+        }
+        ListElement {
+            song: "Happiness"
+            band: "Dance Gavin Dance"
+            source: "../songs/Dance Gavin Dance - Happiness.mp3"
+        }
+        ListElement {
+            song: "Open Your Eyes And Look North"
+            band: "Dance Gavin Dance"
+            source: "../songs/Dance Gavin Dance - Open Your Eyes and Look North.mp3"
+        }
+    }
     property int song_index: 0
-    property variant sources: ["../songs/Dance Gavin Dance - Burning Down the Nicotine Armoire (audio-cutter.com).mp3",
-        "../songs/Dance Gavin Dance - Happiness.mp3",
-        "../songs/Dance Gavin Dance - Open Your Eyes and Look North.mp3"]
-    property int number_of_songs: 3
+    property bool show_menu: true
+    property bool is_playing: song_current.playbackState === Audio.PlayingState
 
     Rectangle
     {
@@ -30,7 +41,7 @@ ApplicationWindow {
         Audio
         {
             id: song_current
-            source: sources[song_index]
+            source: mdl_library.get(song_index).source
         }
 
         Image {
@@ -51,54 +62,55 @@ ApplicationWindow {
                 color: "orange"
 
 
-
                 ListView
                 {
                     id: lst_menu
                     anchors.fill: parent
 
-                    model: LibraryModel {}
-                    delegate:
-                        Text {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        text: song + " - " + band
-                        wrapMode: Text.Wrap
+                    visible: show_menu
+
+                    model: mdl_library
+                    delegate: MarqueeText {
+                        text: band + "/" + song
+                        pointSize: 10
+
+                        scroll_duration: 9000
                     }
                 }
 
-                Rectangle
+
+                MarqueeText
                 {
-                    id: rct_text
-                    visible: false
+                    id: txt_screen_song
+                    text: mdl_library.get(song_index).song
+                    pointSize: 12
 
-                    anchors.fill: parent
+                    pause_begin: 2000
+                    scroll_duration: 4000
 
-                    Text
-                    {
-                        id: txt_screen_song
+                    visible: !show_menu
+                }
 
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        y: 0
-                        text: is_playing === true ? "Song: " + songs[song_index] : ""
-                        font.family: "BELLABOO"
-                        font.pointSize: 14
-                        wrapMode: Text.Wrap
-                    }
+                MarqueeText
+                {
+                    id: txt_screen_band
+                    anchors.top: txt_screen_song.bottom
+                    text: mdl_library.get(song_index).band
+                    pointSize: 12
 
-                    Text
-                    {
-                        id: txt_screen_band
-                        visible: false
-                        anchors.top: txt_screen_song.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        text: is_playing === true ? "Band: " + bands[song_index] : "Paused..."
-                        font.family: "BELLABOO"
-                        font.pointSize: 14
-                        wrapMode: Text.Wrap
-                    }
+                    pause_begin: 2000
+                    scroll_duration: 4000
+
+                    visible: !show_menu
+                }
+
+                Text
+                {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    text: "Paused..."
+
+                    visible: !show_menu && !is_playing
                 }
 
                 MouseArea
@@ -107,11 +119,14 @@ ApplicationWindow {
                     anchors.fill: parent
                     onClicked:
                     {
-                        console.log("x = " + ma_screen.mouseX)
-                        console.log("y = " + ma_screen.mouseY)
-                        console.log("Screen clicked!")
+                        if(show_menu)
+                        {
+                            show_menu = false
+                            song_current.stop()
+                            song_index = lst_menu.indexAt( ma_screen.mouseX, ma_screen.mouseY)
+                            song_current.play()
+                        }
                     }
-
                 }
             }
 
@@ -131,9 +146,12 @@ ApplicationWindow {
 
                     onClicked:
                     {
-                        song_current.stop()
-                        song_index = ((song_index - 1) < 0) ? (number_of_songs - 1) : (song_index - 1)
-                        song_current.play()
+                        var was_playing = is_playing
+                        song_index = ((song_index - 1) < 0) ? (mdl_library.count - 1) : (song_index - 1)
+                        if(was_playing)
+                            song_current.play()
+
+                        show_menu = false
                     }
                 }
             }
@@ -154,9 +172,10 @@ ApplicationWindow {
 
                     onClicked:
                     {
-                        song_current.stop()
-                        song_index = (song_index + 1) % number_of_songs
-                        song_current.play()
+                        var was_playing = is_playing
+                        song_index = (song_index + 1) % mdl_library.count
+                        if(was_playing)
+                            song_current.play()
                     }
                 }
             }
@@ -177,7 +196,7 @@ ApplicationWindow {
 
                     onClicked:
                     {
-
+                        show_menu = !show_menu
                     }
                 }
             }
@@ -199,16 +218,12 @@ ApplicationWindow {
 
                     onClicked:
                     {
-                        if(is_playing === false)
-                        {
-                            is_playing = true;
-                            song_current.play()
-                        }
+                        show_menu = false
+
+                        if(is_playing)
+                            song_current.pause()
                         else
-                        {
-                            is_playing = false;
-                            song_current.pause();
-                        }
+                            song_current.play()
                     }
                 }
             }

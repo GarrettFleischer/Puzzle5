@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>BandDisplay.qml</file>
-        <file>LibraryModel.qml</file>
+        <file>MarqueeText.qml</file>
     </qresource>
 </RCC>
